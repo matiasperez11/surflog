@@ -4,9 +4,6 @@ import java.awt.event.*;
 import java.util.HashSet;
 import java.util.Random;
 import java.awt.image.BufferedImage;
-import javax.imageio.ImageIO;
-import java.io.File;
-import java.io.InputStream;
 
 public class PanelJuego extends JPanel implements Runnable {
 
@@ -35,7 +32,10 @@ public class PanelJuego extends JPanel implements Runnable {
     public Thread    hilo;
     public volatile boolean jugando   = false;
     public volatile boolean game_over = false;
-    public int       puntuacion = 0;
+    // Los campos de abajo se escriben desde el hilo del juego (run()) y se leen
+    // desde el EDT en paintComponent(); volatile para que esas lecturas vean
+    // siempre el último valor en vez de una copia potencialmente antigua.
+    public volatile int       puntuacion = 0;
     int              parado_ticks = 0;
 
     public Surfista surfista;
@@ -44,19 +44,19 @@ public class PanelJuego extends JPanel implements Runnable {
 
     HashSet<Integer> teclas = new HashSet<>();
 
-    public int ola_offset = 0;
+    public volatile int ola_offset = 0;
     public int ola_vel;
-    public int tick = 0;
+    public volatile int tick = 0;
 
-    public boolean aerial_active = false;
+    public volatile boolean aerial_active = false;
     public int     aerial_timer  = 0;
-    public int     aerial_pts    = 0;
-    public boolean en_tubo       = false;
-    public int     tubo_ticks    = 0;
-    public boolean wipeout_volando = false;
-    public double  wipeout_angulo  = 0;
-    public boolean ola_invertida   = false;
-    public double  peligro_x       = 0;
+    public volatile int     aerial_pts    = 0;
+    public volatile boolean en_tubo       = false;
+    public volatile int     tubo_ticks    = 0;
+    public volatile boolean wipeout_volando = false;
+    public volatile double  wipeout_angulo  = 0;
+    public volatile boolean ola_invertida   = false;
+    public volatile double  peligro_x       = 0;
     int            spawn_ticks   = 0;
     static final int SPAWN_GRACE  = 50;
 
@@ -158,10 +158,24 @@ public class PanelJuego extends JPanel implements Runnable {
     }
 
     void reiniciar() {
+        // Se llama desde el clic del ratón, en el EDT — nunca hay que bloquearlo.
+        // Antes hacía Thread.sleep(100) aquí mismo cruzando los dedos para que el
+        // hilo viejo hubiera terminado; ahora se espera de verdad (join) en un
+        // hilo aparte y solo se reinicia cuando el viejo ya terminó del todo.
         jugando = false;
-        try { Thread.sleep(100); } catch (InterruptedException e) { e.printStackTrace(); }
-        cargarCapas();
-        iniciar();
+        wipeout_volando = false; // por si se reinicia a mitad de la animación de wipeout
+        Thread hiloViejo = hilo;
+        new Thread(() -> {
+            try {
+                if (hiloViejo != null) hiloViejo.join();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            SwingUtilities.invokeLater(() -> {
+                cargarCapas();
+                iniciar();
+            });
+        }).start();
     }
 
     void cargarCapas() {
@@ -337,11 +351,7 @@ public class PanelJuego extends JPanel implements Runnable {
     }
 
     BufferedImage leerImg(String ruta) throws Exception {
-        BufferedImage img = ImageIO.read(new File(ruta));
-        if (img != null) return img;
-        InputStream is = getClass().getClassLoader().getResourceAsStream(ruta);
-        if (is != null) return ImageIO.read(is);
-        return null;
+        return ImagenUtil.leer(ruta);
     }
 
     BufferedImage procesarImg(String ruta, Color target) {

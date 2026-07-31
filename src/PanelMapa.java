@@ -1,11 +1,7 @@
 import javax.swing.*;
-import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
 import java.util.ArrayList;
 
 public class PanelMapa extends JPanel {
@@ -23,12 +19,7 @@ public class PanelMapa extends JPanel {
     PanelMapa(ArrayList<Spot> spots){
         this.spots = spots;
         try {
-            InputStream is = getClass().getClassLoader().getResourceAsStream("resources/img/map.png");
-            if (is == null){
-                File f = new File("resources/img/map.png");
-                if (f.exists()) is = new FileInputStream(f);
-            }
-            if (is != null) imgMapa = ImageIO.read(is);
+            imgMapa = ImagenUtil.leer("resources/img/map.png");
         } catch (Exception e){ e.printStackTrace(); }
 
         addMouseListener(new MouseAdapter(){

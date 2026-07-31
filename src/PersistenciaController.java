@@ -49,9 +49,9 @@ public class PersistenciaController {
             String json = sb.toString();
             int pos = 0;
             while (true){
-                int ini = json.indexOf('{', pos);
+                int ini = indexOfFueraDeString(json, '{', pos);
                 if (ini < 0) break;
-                int fin = json.indexOf('}', ini);
+                int fin = indexOfFueraDeString(json, '}', ini);
                 if (fin < 0) break;
                 Spot s = parsear(json.substring(ini+1, fin));
                 if (s != null) lista.add(s);
@@ -95,8 +95,45 @@ public class PersistenciaController {
         int i = obj.indexOf(key);
         if (i < 0) return "";
         i += key.length();
-        int j = obj.indexOf('"', i);
-        return j < 0 ? "" : obj.substring(i, j);
+        int j = indexOfComillaSinEscapar(obj, i);
+        return j < 0 ? "" : unescape(obj.substring(i, j));
+    }
+
+    // Busca el próximo '{' o '}' que no esté dentro de un valor de texto entre
+    // comillas — sin esto, un comentario con { o } corta el objeto en el sitio
+    // equivocado y puede perder datos de ese spot y de los siguientes.
+    static int indexOfFueraDeString(String s, char target, int from){
+        boolean dentro = false;
+        for (int i = from; i < s.length(); i++){
+            char c = s.charAt(i);
+            if (c == '\\' && dentro){ i++; continue; }
+            if (c == '"'){ dentro = !dentro; continue; }
+            if (!dentro && c == target) return i;
+        }
+        return -1;
+    }
+
+    // Busca la comilla de cierre real de un valor, saltando las comillas escapadas (\").
+    static int indexOfComillaSinEscapar(String s, int from){
+        for (int i = from; i < s.length(); i++){
+            char c = s.charAt(i);
+            if (c == '\\'){ i++; continue; }
+            if (c == '"') return i;
+        }
+        return -1;
+    }
+
+    static String unescape(String s){
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < s.length(); i++){
+            char c = s.charAt(i);
+            if (c == '\\' && i + 1 < s.length()){
+                char n = s.charAt(i + 1);
+                if (n == '"' || n == '\\'){ sb.append(n); i++; continue; }
+            }
+            sb.append(c);
+        }
+        return sb.toString();
     }
 
     static int gi(String obj, String field){

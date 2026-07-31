@@ -4,8 +4,11 @@ import java.util.HashSet;
 
 public class Surfista {
 
-    public int x, y, ancho, alto;
-    public double vx = 0, vy = 0;
+    // volatile: x/y/alto los escribe el hilo del juego y los lee paintComponent()
+    // en el EDT (además, actualizarAltoSurfista() escribe "alto" desde los dos
+    // hilos), así que necesitan garantía de visibilidad entre hilos.
+    public volatile int x, y, ancho, alto;
+    public volatile double vx = 0, vy = 0;
     public double bwMult = 1.0;
 
     // acumuladores sub-píxel para que velocidades pequeñas muevan al surfista

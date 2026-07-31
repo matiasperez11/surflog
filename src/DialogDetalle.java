@@ -1,12 +1,7 @@
 import javax.swing.*;
 import javax.swing.border.*;
 import java.awt.event.*;
-import javax.imageio.ImageIO;
 import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
 
 public class DialogDetalle extends JDialog {
 
@@ -44,7 +39,7 @@ public class DialogDetalle extends JDialog {
         lbl.setBackground(new Color(18, 32, 58));
         lbl.setOpaque(true);
 
-        lbl.setIcon(cargarIcono(s.rutaFoto, 440, 200));
+        lbl.setIcon(ImagenUtil.cargarIcono(s.rutaFoto, 440, 200));
         p.add(lbl, BorderLayout.CENTER);
         return p;
     }
@@ -85,11 +80,19 @@ public class DialogDetalle extends JDialog {
 
     JLabel infoLabel(String campo, String valor){
         JLabel lbl = new JLabel("<html><div style='width:395px'><font color='#8899bb'>"
-                + campo + ": </font><font color='#d7cdb4'>" + valor + "</font></div></html>");
+                + esc(campo) + ": </font><font color='#d7cdb4'>" + esc(valor) + "</font></div></html>");
         lbl.setFont(new Font("SansSerif", Font.PLAIN, 13));
         lbl.setBorder(BorderFactory.createEmptyBorder(2, 0, 2, 0));
         lbl.setAlignmentX(Component.LEFT_ALIGNMENT);
         return lbl;
+    }
+
+    // El HTML de Swing no interpreta esto como el navegador, pero < > &
+    // sin escapar en texto libre (comentario, país, región...) igual
+    // rompen el renderizado del JLabel.
+    static String esc(String s){
+        if (s == null) return "";
+        return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
     }
 
     JPanel buildGTA(Spot s){
@@ -100,7 +103,7 @@ public class DialogDetalle extends JDialog {
                 new MatteBorder(1, 0, 0, 0, new Color(50, 70, 110)),
                 BorderFactory.createEmptyBorder(12, 16, 14, 16)));
 
-        JLabel lblFrase = new JLabel("<html><div style='width:395px'><i>" + getFrase(s) + "</i></div></html>");
+        JLabel lblFrase = new JLabel("<html><div style='width:395px'><i>" + esc(getFrase(s)) + "</i></div></html>");
         lblFrase.setFont(new Font("SansSerif", Font.ITALIC, 14));
         lblFrase.setForeground(Color.WHITE);
         lblFrase.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -140,7 +143,11 @@ public class DialogDetalle extends JDialog {
         dlg.setLocationRelativeTo(this);
         dlg.addWindowListener(new WindowAdapter(){
             public void windowClosing(WindowEvent e){
+                // jugando para el bucle principal; wipeout_volando para la animación
+                // de salir volando, que corre en un segundo bucle aparte y no miraba
+                // jugando — sin esto el hilo seguía vivo tras cerrar la ventana.
                 pj.jugando = false;
+                pj.wipeout_volando = false;
             }
         });
         dlg.setVisible(true);
@@ -182,23 +189,6 @@ public class DialogDetalle extends JDialog {
         }
     }
 
-    Icon cargarIcono(String ruta, int maxW, int maxH){
-        if (ruta == null || ruta.isEmpty()) return new PlaceholderIcon(maxW, maxH);
-        try {
-            InputStream is = getClass().getClassLoader().getResourceAsStream(ruta);
-            if (is == null && new File(ruta).exists()) is = new FileInputStream(ruta);
-            if (is != null){
-                BufferedImage orig = ImageIO.read(is);
-                double scale = Math.min((double) maxW / orig.getWidth(), (double) maxH / orig.getHeight());
-                int sw = (int) (orig.getWidth()  * scale);
-                int sh = (int) (orig.getHeight() * scale);
-                return new ImageIcon(orig.getScaledInstance(sw, sh, Image.SCALE_SMOOTH));
-            }
-        } catch (Exception e){
-            e.printStackTrace();
-        }
-        return new PlaceholderIcon(maxW, maxH);
-    }
 
     String safe(String s){
         return (s != null && !s.isEmpty()) ? s : "—";

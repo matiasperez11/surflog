@@ -1,11 +1,6 @@
 import javax.swing.*;
 import javax.swing.table.*;
-import javax.imageio.ImageIO;
 import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
 
 public class ImageRenderer extends DefaultTableCellRenderer {
 
@@ -19,27 +14,9 @@ public class ImageRenderer extends DefaultTableCellRenderer {
 
         if (value instanceof Spot){
             Spot s = (Spot) value;
-            label.setIcon(cargarIcono(s.rutaFoto, 60, 40));
+            label.setIcon(ImagenUtil.cargarIcono(s.rutaFoto, 60, 40));
         }
         return label;
-    }
-
-    Icon cargarIcono(String ruta, int maxW, int maxH){
-        if (ruta == null || ruta.isEmpty()) return new PlaceholderIcon(maxW, maxH);
-        try {
-            InputStream is = getClass().getClassLoader().getResourceAsStream(ruta);
-            if (is == null && new File(ruta).exists()) is = new FileInputStream(ruta);
-            if (is != null){
-                BufferedImage orig = ImageIO.read(is);
-                double scale = Math.min((double) maxW / orig.getWidth(), (double) maxH / orig.getHeight());
-                int sw = (int) (orig.getWidth()  * scale);
-                int sh = (int) (orig.getHeight() * scale);
-                return new ImageIcon(orig.getScaledInstance(sw, sh, Image.SCALE_SMOOTH));
-            }
-        } catch (Exception e){
-            e.printStackTrace();
-        }
-        return new PlaceholderIcon(maxW, maxH);
     }
 }
 
