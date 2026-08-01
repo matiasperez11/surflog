@@ -2,8 +2,6 @@
 
 Aplicación de escritorio en Java/Swing hecha como proyecto final de Programación Orientada a Objetos (universidad). Es un cuaderno de bitácora de spots de surf: das de alta spots con sus características (tipo de fondo, dirección de ola, nivel, tablas recomendadas...), los filtras y consultas en una tabla, y los ves ubicados en un mapa interactivo. Cada spot tiene además un mini-juego de surf jugable, con física propia (aceleración, gravedad, tubos, aéreos) y ambientación visual distinta por spot.
 
-Construida de forma independiente con ayuda de [Claude Code](https://claude.com/claude-code).
-
 ## Qué hace
 
 - **Logbook**: alta/edición/borrado de spots, filtros por país, nivel, tipo de fondo y tabla, tabla con miniatura de foto.
